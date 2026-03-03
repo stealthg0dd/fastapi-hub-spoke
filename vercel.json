@@ -1,45 +1,24 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "builds": [
+  "rewrites": [
     {
-      "src": "frontend-landing/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
+      "source": "/api/(.*)",
+      "destination": "backend/shared_services/main.py"
     },
     {
-      "src": "frontend-portal/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
+      "source": "/portal/(.*)",
+      "destination": "/frontend-portal/dist/index.html"
     },
     {
-      "src": "backend/shared_services/main.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "backend/shared_services/main.py"
-    },
-    {
-      "src": "/portal(.*)",
-      "dest": "/frontend-portal/build/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/frontend-landing/build/$1"
+      "source": "/(.*)",
+      "destination": "/frontend-landing/dist/index.html"
     }
   ],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "https://neufin.ai" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type,X-Venture-ID,X-API-Key,Authorization" }
       ]
