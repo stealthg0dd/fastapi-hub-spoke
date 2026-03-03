@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -10,11 +12,7 @@
       "destination": "/portal/index.html"
     },
     {
-      "source": "/portal",
-      "destination": "/portal/index.html"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!api|portal).*)",
       "destination": "/index.html"
     }
   ]

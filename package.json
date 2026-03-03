@@ -9,8 +9,7 @@
     "dev:portal": "cd frontend-portal && npm run dev -- --port 3001",
     "build:landing": "cd frontend-landing && npm i && npm run build",
     "build:portal": "cd frontend-portal && npm i && npm run build",
-    "build": "rm -rf dist && npm run build:landing && npm run build:portal && mkdir -p dist/portal && cp -a frontend-landing/dist/. dist/ && cp -a frontend-portal/dist/. dist/portal/"
-  },
+    "build": "rm -rf .vercel/output && mkdir -p .vercel/output/static/portal && npm run build:landing && npm run build:portal && cp -a frontend-landing/dist/. .vercel/output/static/ && cp -a frontend-portal/dist/. .vercel/output/static/portal/"  },
   "devDependencies": {
     "concurrently": "^9.2.1"
   }
