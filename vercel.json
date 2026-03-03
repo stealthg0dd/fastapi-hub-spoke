@@ -7,25 +7,15 @@
     },
     {
       "source": "/portal/(.*)",
-      "destination": "/frontend-portal/dist/index.html"
+      "destination": "/portal/index.html"
     },
     {
       "source": "/portal",
-      "destination": "/frontend-portal/dist/index.html"
+      "destination": "/portal/index.html"
     },
     {
       "source": "/(.*)",
-      "destination": "/frontend-landing/dist/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type,X-Venture-ID,X-API-Key,Authorization" }
-      ]
+      "destination": "/index.html"
     }
   ]
 }
