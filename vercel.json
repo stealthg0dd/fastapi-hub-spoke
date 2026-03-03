@@ -1,19 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".vercel/output",
   "cleanUrls": true,
-  "trailingSlash": false,
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "backend/shared_services/main.py"
-    },
-    {
-      "source": "/portal/(.*)",
-      "destination": "/portal/index.html"
-    },
-    {
-      "source": "/((?!api|portal).*)",
-      "destination": "/index.html"
-    }
-  ]
+  "trailingSlash": false
 }

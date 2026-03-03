@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "concurrently -n backend,landing,portal -c cyan,green,yellow \"npm run dev:backend\" \"npm run dev:landing\" \"npm run dev:portal\"",
-    "dev:backend": "cd backend/shared_services && python3 -m uvicorn main:app --reload --port 8000",
+    "dev:backend": "lsof -ti:8000 | xargs kill -9 || true && sleep 1 && cd backend/shared_services && python3 -m uvicorn main:app --reload --port 8000",
     "dev:landing": "cd frontend-landing && npm run dev -- --port 3000",
     "dev:portal": "cd frontend-portal && npm run dev -- --port 3001",
-    "build:landing": "cd frontend-landing && npm i && npm run build",
-    "build:portal": "cd frontend-portal && npm i && npm run build",
-    "build": "rm -rf .vercel/output && mkdir -p .vercel/output/static/portal && npm run build:landing && npm run build:portal && cp -a frontend-landing/dist/. .vercel/output/static/ && cp -a frontend-portal/dist/. .vercel/output/static/portal/"  },
+    "build": "node scripts/vercel-build.mjs",
+    "build:landing": "cd frontend-landing && npm install --legacy-peer-deps && npm run build",
+    "build:portal": "cd frontend-portal && npm install && npm run build"
+  },
   "devDependencies": {
     "concurrently": "^9.2.1"
   }
