@@ -7,11 +7,11 @@
     },
     {
       "source": "/portal/(.*)",
-      "destination": "/frontend-portal/dist/index.html"
+      "destination": "/frontend-portal/dist/$1"
     },
     {
       "source": "/(.*)",
-      "destination": "/frontend-landing/dist/index.html"
+      "destination": "/frontend-landing/dist/$1"
     }
   ],
   "headers": [
