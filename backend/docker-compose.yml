@@ -1,0 +1,84 @@
+version: "3.9"
+
+services:
+  hub:
+    build:
+      context: ./shared_services
+      dockerfile: Dockerfile
+    container_name: fastapi-hub
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/hubdb
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./shared_services:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  spoke-template:
+    build:
+      context: ./spoke_templates
+      dockerfile: Dockerfile
+    container_name: fastapi-spoke-template
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/hubdb
+      - REDIS_URL=redis://redis:6379/0
+      - SPOKE_NAME=spoke-template
+      - HUB_URL=http://hub:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      hub:
+        condition: service_started
+    volumes:
+      - ./spoke_templates:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8001 --reload
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: postgres-pgvector
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hubdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+
+volumes:
+  postgres_data:
+  redis_data:

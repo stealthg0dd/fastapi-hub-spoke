@@ -1,0 +1,35 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+.pytest_cache/
+*.db
+.mypy_cache/
+
+# ── Node ──────────────────────────────────────────────────────────────────────
+node_modules/
+frontend-landing/node_modules/
+frontend-portal/node_modules/
+
+# ── Build artifacts ───────────────────────────────────────────────────────────
+frontend-landing/build/
+frontend-portal/dist/
+
+# ── Environment secrets ───────────────────────────────────────────────────────
+.env
+.env.local
+.env.production
+frontend-landing/.env
+frontend-landing/.env.production
+frontend-portal/.env
+frontend-portal/.env.production
+
+# ── OS & Editor ───────────────────────────────────────────────────────────────
+.DS_Store
+.vscode/settings.json
+*.swp
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+scripts/reprocess_trades.py
