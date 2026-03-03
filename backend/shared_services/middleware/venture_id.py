@@ -87,6 +87,8 @@ class VentureIDMiddleware(BaseHTTPMiddleware):
         path = request.url.path
 
         # ── Exempt paths ─────────────────────────────────────────────────
+        if request.method == "OPTIONS":
+            return await call_next(request)
         if any(path.startswith(p) for p in _EXEMPT_PREFIXES):
             return await call_next(request)
         if any(path.endswith(s) for s in _EXEMPT_SUFFIXES):

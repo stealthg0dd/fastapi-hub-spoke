@@ -24,6 +24,13 @@ app = FastAPI(
     openapi_url="/openapi.json",
     lifespan=lifespan,
 )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # For local dev, "*" is fine. In Vercel, use specific URLs.
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.add_middleware(
     CORSMiddleware,
