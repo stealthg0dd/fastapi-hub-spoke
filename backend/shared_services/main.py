@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
@@ -10,15 +11,31 @@ from middleware.venture_id import VentureIDMiddleware
 
 logger = logging.getLogger(__name__)
 
+_DB_RETRY_ATTEMPTS = 5
+_DB_RETRY_DELAY = 5  # seconds between attempts
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        await create_tables()
-    except Exception as exc:
-        # Log but don't crash — tables may already exist, or the DB
-        # may become reachable after startup (Railway cold-start).
-        logger.error("create_tables failed at startup: %s", exc)
+    # Retry loop — the database (Supabase / Railway Postgres) can take a few
+    # seconds to become reachable after a cold-start, causing OSError [Errno 101].
+    for attempt in range(1, _DB_RETRY_ATTEMPTS + 1):
+        try:
+            await create_tables()
+            logger.info("Database ready (attempt %d)", attempt)
+            break
+        except Exception as exc:
+            if attempt < _DB_RETRY_ATTEMPTS:
+                logger.warning(
+                    "create_tables attempt %d/%d failed: %s — retrying in %ds",
+                    attempt, _DB_RETRY_ATTEMPTS, exc, _DB_RETRY_DELAY,
+                )
+                await asyncio.sleep(_DB_RETRY_DELAY)
+            else:
+                logger.error(
+                    "create_tables failed after %d attempts: %s — continuing without DDL sync",
+                    _DB_RETRY_ATTEMPTS, exc,
+                )
     yield
     await close_redis()
 

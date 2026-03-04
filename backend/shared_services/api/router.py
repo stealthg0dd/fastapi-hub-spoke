@@ -20,51 +20,77 @@ logger = logging.getLogger(__name__)
 
 api_router = APIRouter()
 
-# chat router defines prefix="/chat" internally, so don't add it again here.
+# Core routes
 api_router.include_router(health_router)
 api_router.include_router(chat_router)
 api_router.include_router(admin_router, prefix="/admin")
 api_router.include_router(market_router, prefix="/market")
 api_router.include_router(stripe_router, prefix="/stripe")
 
-# ── SPOKE PATH ────────────────────────────────────────────────────────────────
-# _SERVICE_ROOT = the directory that contains main.py (backend/shared_services/ locally, /app on Railway).
-# Spokes live as a sibling directory: backend/spokes/ next to backend/shared_services/.
-# On Railway (root dir = backend/shared_services) the spokes dir won't exist in the
-# container, so _mount_spoke() will log a warning and skip — no crash.
-_SERVICE_ROOT = Path(__file__).resolve().parent.parent  # api/ → shared_services/
-_SPOKES_DIR = (_SERVICE_ROOT.parent / "spokes").resolve()
+# ── SPOKE PATH DISCOVERY ──────────────────────────────────────────────────────
+# This logic ensures the app finds the 'spokes' folder regardless of Docker 
+# structure or local dev paths.
+_SERVICE_ROOT = Path(__file__).resolve().parent.parent  # api/ -> shared_services/
 
-logger.info("Router spoke directory: %s (exists=%s)", _SPOKES_DIR, _SPOKES_DIR.exists())
+def _find_spokes_dir() -> Path:
+    """
+    Scans for the spokes directory in potential locations.
+    Railway typically mounts the repo at /app.
+    """
+    candidates = [
+        _SERVICE_ROOT.parent / "spokes",              # Local Dev: backend/spokes/
+        Path("/app/spokes"),                          # Railway: Flattened root
+        Path("/app/backend/spokes"),                  # Railway: Full repo root
+        _SERVICE_ROOT.parent.parent.parent / "spokes" # Deep fallback
+    ]
+    
+    for c in candidates:
+        # We verify by checking if the specific 'neufin' spoke directory exists
+        if c.is_dir() and (c / "neufin").exists():
+            return c.resolve()
+            
+    # Fallback to current working directory discovery
+    cwd_spokes = Path(os.getcwd()) / "spokes"
+    if cwd_spokes.is_dir():
+        return cwd_spokes.resolve()
+
+    return candidates[0].resolve()
+
+_SPOKES_DIR = _find_spokes_dir()
+logger.info("Router configuration: Spoke directory set to %s (Found=%s)", 
+            _SPOKES_DIR, _SPOKES_DIR.exists())
 
 # ── Spoke routers ─────────────────────────────────────────────────────────────
 _SPOKE_WINS: frozenset[str] = frozenset({"models"})
 _HUB_WINS: frozenset[str] = frozenset({"agents"})
 
 def _ensure_spoke_path(spoke: str) -> None:
+    """Injects the spoke path into sys.path to allow internal imports."""
     p = str(_SPOKES_DIR / spoke)
     if not os.path.exists(p):
-        raise FileNotFoundError(f"Spoke path does not exist: {p}")
+        raise FileNotFoundError(f"Spoke directory missing at: {p}")
     if p in sys.path:
         sys.path.remove(p)
     sys.path.insert(0, p)
 
 def _load_spoke_module(spoke: str, filename: str = "api.py") -> types.ModuleType:
+    """Dynamically loads the spoke's api.py while preventing module collisions."""
     path = _SPOKES_DIR / spoke / filename
     module_name = f"spoke_{spoke}_api"
 
     if not path.exists():
-        raise FileNotFoundError(f"Cannot locate spoke module file: {path}")
+        raise FileNotFoundError(f"Spoke API file missing at: {path}")
 
     spec = importlib.util.spec_from_file_location(module_name, path)
     if spec is None or spec.loader is None:
-        raise ImportError(f"Spec loader failed for: {path}")
+        raise ImportError(f"Could not initialize loader for spoke module: {path}")
 
     mod = importlib.util.module_from_spec(spec)
     sys.modules[module_name] = mod
 
     spoke_root = str(_SPOKES_DIR / spoke)
 
+    # Evict conflicting packages (e.g., 'models') to let Spoke's version win
     _displaced: dict[str, Any] = {}
     for key in list(sys.modules):
         top = key.split(".")[0]
@@ -75,6 +101,7 @@ def _load_spoke_module(spoke: str, filename: str = "api.py") -> types.ModuleType
         if not origin.startswith(spoke_root):
             _displaced[key] = sys.modules.pop(key)
 
+    # Pre-load hub packages that Hub should win (e.g., 'agents')
     for pkg_name in _HUB_WINS:
         if pkg_name not in sys.modules:
             if spoke_root in sys.path:
@@ -89,17 +116,24 @@ def _load_spoke_module(spoke: str, filename: str = "api.py") -> types.ModuleType
     try:
         spec.loader.exec_module(mod)
     finally:
+        # Restore the hub's displaced modules
         sys.modules.update(_displaced)
 
     return mod
 
 def _mount_spoke(slug: str, prefix: str) -> None:
+    """Mounts the spoke router onto the main API router."""
     try:
         _ensure_spoke_path(slug)
         mod = _load_spoke_module(slug)
-        api_router.include_router(mod.router, prefix=prefix)
-        logger.info("router: %s spoke mounted at %s", slug, prefix)
-    except (ImportError, FileNotFoundError, AttributeError) as exc:
-        logger.warning("router: %s spoke unavailable (%s)", slug, exc)
+        # Ensure the module has a 'router' attribute
+        if hasattr(mod, 'router'):
+            api_router.include_router(mod.router, prefix=prefix)
+            logger.info("Successfully mounted '%s' spoke at prefix %s", slug, prefix)
+        else:
+            logger.error("Spoke '%s' has no APIRouter named 'router'", slug)
+    except Exception as exc:
+        logger.warning("Spoke '%s' unavailable: %s", slug, exc)
 
+# Mount Spoke
 _mount_spoke("neufin", "/neufin")
