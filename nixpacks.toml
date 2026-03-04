@@ -3,10 +3,12 @@ nixPkgs = ["python311", "stdenv.cc.cc.lib", "zlib"]
 
 [phases.install]
 cmds = [
-    # Manually bootstrap pip inside the container to avoid Nix conflicts
-    "python3.11 -m ensurepip",
-    "python3.11 -m pip install --upgrade pip",
-    "python3.11 -m pip install --break-system-packages --prefix=/app/.local -r backend/shared_services/requirements.txt"
+    # 1. Create a virtual environment in /app/venv
+    "python3.11 -m venv /app/venv",
+    # 2. Upgrade pip inside the writable venv
+    "/app/venv/bin/pip install --upgrade pip",
+    # 3. Install requirements into the venv
+    "/app/venv/bin/pip install -r backend/shared_services/requirements.txt"
 ]
 
 [phases.build]

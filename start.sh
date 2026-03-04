@@ -1,28 +1,26 @@
 #!/bin/bash
 set -e
 
-# ── 1. Locate Python ────────────────────────────────────────────────────────
-PYTHON="python3.11"
+# ── 1. Activate the Virtual Environment ─────────────────────────────────────
+# This automatically handles PYTHONPATH and the correct PIP-installed packages
+export VIRTUAL_ENV="/app/venv"
+export PATH="/app/venv/bin:$PATH"
 
-# ── 2. Environment Pathing ──────────────────────────────────────────────────
-# Ensure we prioritize the packages we just installed in the /app/.local folder
-export PATH="/app/.local/bin:$PATH"
-export PYTHONPATH="/app/.local/lib/python3.11/site-packages:/app/backend:$PYTHONPATH"
+# ── 2. Library & Pathing ────────────────────────────────────────────────────
+# Ensure C++ libraries for NumPy/PGVector are visible
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/nix/var/nix/profiles/default/lib:/usr/lib:/usr/local/lib"
+export PYTHONPATH="/app/backend:$PYTHONPATH"
 
 # ── 3. The "Bulletproof" SSL Fix ────────────────────────────────────────────
-# Instead of looking at the OS, we force Python to use the certs from 'certifi'
-if $PYTHON -c "import certifi" &>/dev/null; then
-    CERTS=$($PYTHON -c "import certifi; print(certifi.where())")
-    export SSL_CERT_FILE="$CERTS"
-    export REQUESTS_CA_BUNDLE="$CERTS"
-    export HTTXX_CA_BUNDLE="$CERTS"
-    echo "🔒 SSL verification locked to certifi: $CERTS"
-else
-    echo "⚠️ Warning: certifi not found, SSL might fail."
-fi
+# We use the venv's certifi for all DB and OpenAI connections
+CERTS=$(python -c "import certifi; print(certifi.where())")
+export SSL_CERT_FILE="$CERTS"
+export REQUESTS_CA_BUNDLE="$CERTS"
+export HTTXX_CA_BUNDLE="$CERTS"
 
-# ── 4. Execution ────────────────────────────────────────────────────────────
-echo "🚀 Starting Neufin Hub..."
+echo "🔒 SSL verification secured via venv/certifi."
+
+# ── 4. Start the Application ───────────────────────────────────────────────
+echo "🚀 Starting Neufin Hub from Virtual Environment..."
 cd /app/backend/shared_services
-exec $PYTHON -m uvicorn main:app --host 0.0.0.0 --port "${PORT:-8000}"
+exec uvicorn main:app --host 0.0.0.0 --port "${PORT:-8000}"
