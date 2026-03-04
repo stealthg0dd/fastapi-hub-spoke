@@ -7,6 +7,14 @@ cmds = [
     "python3.11 -m pip install -r backend/shared_services/requirements.txt"
 ]
 
+[phases.build]
+cmds = [
+    "chmod +x /app/start.sh"
+]
+
 [start]
-# We stay at /app and tell Python exactly where the library and spokes live.
-cmd = "PYTHONPATH=/app/backend/shared_services:/app/backend python3.11 -m uvicorn backend.shared_services.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+# start.sh resolves the Python binary name, cd's into the service directory,
+# and launches uvicorn with the correct module path.
+# If Railway's custom Start Command field overrides this, set it to:
+#   bash /app/start.sh
+cmd = "bash /app/start.sh"
