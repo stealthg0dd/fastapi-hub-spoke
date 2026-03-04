@@ -1,8 +1,11 @@
-from collections.abc import AsyncGenerator
 import logging
 import ssl
 import certifi
+import socket
+from collections.abc import AsyncGenerator
 from uuid import uuid4
+from urllib.parse import urlparse
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -19,37 +22,58 @@ from core.context import current_venture_id
 
 logger = logging.getLogger(__name__)
 
-def _asyncpg_url(url: str) -> str:
-    """Fixes the scheme for async compatibility."""
+def _prepare_db_url(url: str) -> str:
+    """
+    1. Fixes the scheme for async compatibility.
+    2. Forces IPv4 resolution to prevent [Errno 101] Network is unreachable.
+    """
     if not url:
         return ""
-    # Ensure we use the asyncpg driver
+    
+    # Standardize scheme
     for prefix in ["postgres://", "postgresql://"]:
         if url.startswith(prefix):
-            return "postgresql+asyncpg://" + url[len(prefix):]
+            url = "postgresql+asyncpg://" + url[len(prefix):]
+            break
+
+    # Force IPv4 Resolution
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+        if hostname:
+            # Resolves to IPv4 to bypass Railway IPv6 routing issues
+            ipv4_address = socket.gethostbyname(hostname)
+            # Reconstruct netloc with IP but keep port/user/pass
+            new_netloc = parsed.netloc.replace(hostname, ipv4_address)
+            url = url.replace(parsed.netloc, new_netloc)
+            logger.info("Resolving DB Host %s to IPv4 %s", hostname, ipv4_address)
+    except Exception as e:
+        logger.warning("IPv4 resolution failed, falling back to hostname: %s", e)
+    
     return url
 
 def _make_ssl_context() -> ssl.SSLContext:
     """
-    Final SSL Fix: Disables verification to stop SSLCertVerificationError.
-    This is necessary when cloud providers have mismatched CA chains.
+    SSL Fix: Disables verification to stop SSLCertVerificationError.
+    Essential for Railway -> Supabase cross-cloud handshakes.
     """
     ctx = ssl.create_default_context(cafile=certifi.where())
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE 
     return ctx
 
-_db_url = _asyncpg_url(settings.database_url)
+# Prepare the final URL
+_db_url = _prepare_db_url(settings.database_url)
 
 # Engine configuration for Supabase Transaction Mode (Port 6543)
 engine = create_async_engine(
     _db_url,
     echo=settings.debug,
-    poolclass=NullPool, # Prevents 'prepared statement already exists' errors
+    poolclass=NullPool, # Critical for PgBouncer/Supabase
     connect_args={
         "ssl": _make_ssl_context(),
         "command_timeout": 60,
-        # Fix for PgBouncer: Unique statement names prevent cache collisions
+        # Prevents 'prepared statement already exists' errors in poolers
         "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4().hex}__",
     },
 )
@@ -91,9 +115,7 @@ async def create_tables() -> None:
     """Resilient table creation with explicit ping."""
     try:
         async with engine.begin() as conn:
-            # Verify the connection works
             await conn.execute(text("SELECT 1"))
-            # Run DDL
             await conn.run_sync(Base.metadata.create_all)
             logger.info("✅ Database handshake successful: Tables verified/created.")
     except Exception as e:
