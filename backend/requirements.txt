@@ -40,3 +40,5 @@ tenacity==8.2.3
 pydantic[email]>=2.6.1
 email-validator>=2.1.0
 aiosmtplib>=5.1.0
+psycopg2-binary==2.9.9
+certifi>=2024.2.2
