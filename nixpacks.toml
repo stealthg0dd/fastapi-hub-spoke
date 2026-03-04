@@ -1,15 +1,17 @@
+[variables]
+    # This forces Railway to provide its own kernel-matched Python
+    PYTHON_VERSION = "3.11"
+
 [phases.setup]
-nixPkgs = ["python311", "stdenv.cc.cc.lib", "zlib", "postgresql"]
+    # System dependencies only. NO 'python311' here.
+    nixPkgs = ["postgresql", "stdenv.cc.cc.lib", "zlib"]
 
 [phases.install]
-cmds = [
-    "python3.11 -m venv /app/venv",
-    "/app/venv/bin/pip install --upgrade pip",
-    "/app/venv/bin/pip install -r backend/shared_services/requirements.txt"
-]
+    cmds = [
+        "python -m venv /app/venv",
+        "/app/venv/bin/pip install --upgrade pip",
+        "/app/venv/bin/pip install -r backend/shared_services/requirements.txt"
+    ]
 
 [phases.build]
-cmds = ["chmod +x /app/start.sh"]
-
-[start]
-cmd = "bash /app/start.sh"
+    cmds = ["chmod +x /app/start.sh"]
