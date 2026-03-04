@@ -29,6 +29,8 @@ langchain-core>=0.3.0
 langchain-anthropic>=0.2.0
 langgraph>=0.2.0
 google-genai
+plaid-python
+psycopg2-binary
 
 # SSL / Certificates
 certifi==2024.2.2
