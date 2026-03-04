@@ -25,5 +25,5 @@ export const router = createBrowserRouter(
       Component: Portfolio,
     },
   ],
-  { basename: import.meta.env.BASE_URL },
+  { basename: "/portal" },
 );
