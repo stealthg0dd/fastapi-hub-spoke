@@ -1,11 +1,12 @@
 [phases.setup]
-# Removed everything except the bare essentials.
-# Railway's Python 3.11 setup usually handles the rest.
 nixPkgs = ["python311", "stdenv.cc.cc.lib", "zlib"]
 
 [phases.install]
 cmds = [
-    "pip install --break-system-packages --prefix=/app/.local -r backend/shared_services/requirements.txt"
+    # Manually bootstrap pip inside the container to avoid Nix conflicts
+    "python3.11 -m ensurepip",
+    "python3.11 -m pip install --upgrade pip",
+    "python3.11 -m pip install --break-system-packages --prefix=/app/.local -r backend/shared_services/requirements.txt"
 ]
 
 [phases.build]
