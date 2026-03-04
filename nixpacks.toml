@@ -2,19 +2,10 @@
 nixPkgs = ["python311", "python311Packages.pip"]
 
 [phases.install]
-cmds = [
-    "python3.11 -m pip install --upgrade pip",
-    "python3.11 -m pip install -r backend/shared_services/requirements.txt"
-]
+cmds = ["python3.11 -m pip install -r backend/shared_services/requirements.txt"]
 
 [phases.build]
-cmds = [
-    "chmod +x /app/start.sh"
-]
+cmds = ["chmod +x /app/start.sh"]
 
 [start]
-# start.sh resolves the Python binary name, cd's into the service directory,
-# and launches uvicorn with the correct module path.
-# If Railway's custom Start Command field overrides this, set it to:
-#   bash /app/start.sh
 cmd = "bash /app/start.sh"
