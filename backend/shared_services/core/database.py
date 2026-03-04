@@ -12,6 +12,22 @@ from sqlalchemy.pool import NullPool
 from core.config import settings
 from core.context import current_venture_id
 
+
+def _asyncpg_url(url: str) -> str:
+    """Ensure the URL uses the postgresql+asyncpg:// scheme.
+
+    Railway (and many PaaS) inject DATABASE_URL as ``postgres://`` or
+    ``postgresql://``.  SQLAlchemy's async engine requires the
+    ``+asyncpg`` driver suffix; without it the engine silently uses
+    the sync psycopg2 adapter and raises OSError on connection.
+    """
+    if url.startswith("postgres://"):
+        return "postgresql+asyncpg://" + url[len("postgres://"):]
+    if url.startswith("postgresql://"):
+        return "postgresql+asyncpg://" + url[len("postgresql://"):]
+    return url  # already has +asyncpg or is a non-standard scheme
+
+
 # NullPool: delegate all connection management to Supabase's PgBouncer
 # (Transaction Pooler on port 6543). SQLAlchemy must not hold open connections
 # between requests because PgBouncer recycles them on transaction end.
@@ -21,7 +37,7 @@ from core.context import current_venture_id
 # and cannot survive connection recycling. Disabling prevents
 # "prepared statement does not exist" errors under high concurrency.
 engine = create_async_engine(
-    settings.database_url,
+    _asyncpg_url(settings.database_url),
     echo=settings.debug,
     poolclass=NullPool,
     connect_args={

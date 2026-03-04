@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,9 +8,17 @@ from core.database import create_tables
 from core.redis import close_redis
 from middleware.venture_id import VentureIDMiddleware
 
+logger = logging.getLogger(__name__)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await create_tables()
+    try:
+        await create_tables()
+    except Exception as exc:
+        # Log but don't crash — tables may already exist, or the DB
+        # may become reachable after startup (Railway cold-start).
+        logger.error("create_tables failed at startup: %s", exc)
     yield
     await close_redis()
 
@@ -21,29 +30,20 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# --- STEP 1: ADD VENTURE ID MIDDLEWARE FIRST ---
-# This ensures it's the "inner" layer.
+# --- MIDDLEWARE ---
 app.add_middleware(VentureIDMiddleware)
 
-# --- STEP 2: ADD CORS MIDDLEWARE LAST ---
-# In FastAPI, the last middleware added is the FIRST one to touch the request.
-# This ensures CORS handles the 'OPTIONS' preflight before VentureID even looks at it.
 _STATIC_ORIGINS: list[str] = [
-    # Local development
     "http://localhost:3000",
     "http://localhost:3001",
-    # Vercel deployments (add new preview URLs here or via ALLOWED_ORIGINS env var)
     "https://neufin.vercel.app",
     "https://neufinfinalbuild1.vercel.app",
-    # Custom domain
     "https://neufin.ai",
     "https://www.neufin.ai",
 ]
 
-# ALLOWED_ORIGINS env var (comma-separated) lets you add extra origins from
-# Railway's dashboard without redeploying — useful for Vercel preview URLs.
 _extra_origins = [o.strip() for o in settings.allowed_origins.split(",") if o.strip()]
-_ALL_ORIGINS = list(dict.fromkeys(_STATIC_ORIGINS + _extra_origins))  # deduped
+_ALL_ORIGINS = list(dict.fromkeys(_STATIC_ORIGINS + _extra_origins))
 
 app.add_middleware(
     CORSMiddleware,

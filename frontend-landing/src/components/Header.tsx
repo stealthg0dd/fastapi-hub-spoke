@@ -16,7 +16,10 @@ const tickerSuggestions = [
   { symbol: 'MSFT', name: 'Microsoft Corp.', change: '+1.5%' },
 ];
 
-const PORTAL_URL = import.meta.env.VITE_PORTAL_URL || 'http://localhost:3001/portal/';
+const PORTAL_URL = import.meta.env.VITE_PORTAL_URL ||
+  (import.meta.env.PROD
+    ? 'https://neufinfinalbuild1.vercel.app/portal/'
+    : 'http://localhost:3001/portal/');
 
 const navigation = [
   { name: 'Home', href: '/', external: false },
