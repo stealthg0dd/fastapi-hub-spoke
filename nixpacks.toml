@@ -1,16 +1,12 @@
 [phases.setup]
-nixPkgs = ["python311", "python311Packages.pip", "nodejs"]
+nixPkgs = ["python311", "python311Packages.pip"]
 
 [phases.install]
 cmds = [
-    "npm install",
-    "python3 -m pip install -r backend/requirements.txt"
-]
-
-[phases.build]
-cmds = [
-    "echo 'Building project...'"
+    "python3.11 -m pip install --upgrade pip",
+    "python3.11 -m pip install -r backend/shared_services/requirements.txt"
 ]
 
 [start]
-cmd = "PYTHONPATH=./backend python3 -m uvicorn backend.shared_services.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+# We stay at /app and tell Python exactly where the library and spokes live.
+cmd = "PYTHONPATH=/app/backend/shared_services:/app/backend python3.11 -m uvicorn backend.shared_services.main:app --host 0.0.0.0 --port ${PORT:-8000}"
