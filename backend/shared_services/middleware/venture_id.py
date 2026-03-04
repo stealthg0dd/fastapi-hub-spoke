@@ -30,6 +30,7 @@ Exempt paths (no checks at all)
 --------------------------------
   /docs   /redoc   /openapi.json   /api/v1/health
   /api/v1/spokes/*/billing/webhook  (Stripe sends no auth headers)
+  /api/v1/spokes/*/webhooks/supabase-signup  (Supabase sends no auth headers)
 
 Path-scope convention for spoke endpoints
 ------------------------------------------
@@ -53,7 +54,7 @@ _EXEMPT_PREFIXES: tuple[str, ...] = (
     "/redoc",
     "/openapi.json",
     "/api/v1/health",
-    "/api/v1/concierge",   # public landing-page chatbot — no venture key required
+    "/api/v1/stripe",   # Stripe checkout + webhook — browser/Stripe send no venture key
 )
 
 # Stripe webhook paths are exempt because Stripe cannot send X-Venture-ID or

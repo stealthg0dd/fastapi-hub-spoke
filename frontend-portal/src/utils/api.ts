@@ -8,7 +8,9 @@ export const API_KEY    = 'neufin.FGUN8eq_O2erbcVVyCtdukMAtcGcwSdBErRK3TZ2FEI';
 export const USER_ID = '00000000-0000-0000-0000-000000000001';
 
 // ── Axios instance ────────────────────────────────────────────────────────────
-const baseURL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1';
+// Use || (not ??) so that an empty-string VITE_API_URL (e.g. unset in Vercel)
+// falls back to the localhost default rather than silently using "" as the URL.
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 export const api = axios.create({
   baseURL,

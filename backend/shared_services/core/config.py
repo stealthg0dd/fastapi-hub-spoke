@@ -1,10 +1,31 @@
 from enum import Enum
 from pathlib import Path
+from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Project root is 3 levels up from backend/shared_services/core/config.py
-_PROJECT_ROOT = Path(__file__).resolve().parents[3]
+# config.py lives at <service_root>/core/config.py
+# Walk up from the service root to find a .env file.
+# On Railway, there is no .env — env vars are injected as OS env vars,
+# so _locate_env_file() returns None and no file loading is attempted.
+_SERVICE_ROOT = Path(__file__).resolve().parent.parent  # core/ → service_root/
+
+
+def _locate_env_file(start: Path) -> Optional[str]:
+    """Walk up the directory tree to find the nearest .env file."""
+    current = start
+    for _ in range(5):
+        candidate = current / ".env"
+        if candidate.is_file():
+            return str(candidate)
+        parent = current.parent
+        if parent == current:  # reached filesystem root
+            break
+        current = parent
+    return None
+
+
+_ENV_FILE = _locate_env_file(_SERVICE_ROOT)
 
 
 class Environment(str, Enum):
@@ -15,7 +36,7 @@ class Environment(str, Enum):
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=str(_PROJECT_ROOT / ".env"),
+        env_file=_ENV_FILE,  # None on Railway (no crash); path to .env locally
         extra="ignore",
     )
 
@@ -57,6 +78,16 @@ class Settings(BaseSettings):
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
     stripe_price_id: str = ""           # recurring Price ID for the Pro plan
+
+    # Frontend URL — used by stripe_service.py to build success/cancel URLs.
+    # Dev default:  http://localhost:3001/portal
+    # Production:   set FRONTEND_URL=https://neufin.vercel.app/portal in Railway
+    frontend_url: str = "http://localhost:3001/portal"
+
+    # CORS — extra allowed origins beyond the static list in main.py.
+    # Set as a comma-separated string in Railway's environment variables:
+    #   ALLOWED_ORIGINS=https://neufin-preview-abc.vercel.app,https://staging.neufin.ai
+    allowed_origins: str = ""
 
 
 settings = Settings()

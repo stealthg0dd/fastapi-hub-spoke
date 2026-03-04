@@ -1,7 +1,23 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": ".vercel/output",
+
+  "installCommand": "npm install --prefix frontend-landing && npm install --prefix frontend-portal",
+
+  "buildCommand": "npm run build --prefix frontend-landing && npm run build --prefix frontend-portal && mkdir -p frontend-landing/dist/portal && cp -r frontend-portal/dist/. frontend-landing/dist/portal/",
+
+  "outputDirectory": "frontend-landing/dist",
+
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+
+  "rewrites": [
+    {
+      "source": "/portal/:path*",
+      "destination": "/portal/index.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }

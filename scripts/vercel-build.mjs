@@ -21,11 +21,12 @@
  * Vercel invokes this script via `npm run build` (root package.json).
  */
 
-import { execSync }                from 'child_process';
+import { execSync }                        from 'child_process';
 import { cpSync, mkdirSync, rmSync,
-         writeFileSync, readFileSync } from 'fs';
-import { join, dirname }           from 'path';
-import { fileURLToPath }           from 'url';
+         writeFileSync, readFileSync,
+         existsSync }                      from 'fs';
+import { join, dirname }                  from 'path';
+import { fileURLToPath }                  from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT      = join(__dirname, '..');
@@ -74,8 +75,25 @@ cpSync(join(ROOT, 'backend', 'shared_services'), FUNC_DIR, { recursive: true });
 // Spokes (neufin and any future spokes)
 cpSync(join(ROOT, 'backend', 'spokes'), join(FUNC_DIR, 'spokes'), { recursive: true });
 
-// Full requirements (includes spokes' deps: stripe, plaid, anthropic, etc.)
-cpSync(join(ROOT, 'backend', 'requirements.txt'), join(FUNC_DIR, 'requirements.txt'));
+// ── Verify requirements.txt exists before copying ─────────────────────────────
+const reqSrc = join(ROOT, 'backend', 'requirements.txt');
+const reqDst = join(FUNC_DIR, 'requirements.txt');
+
+if (!existsSync(reqSrc)) {
+  throw new Error(`[vercel-build] FATAL: backend/requirements.txt not found at ${reqSrc}`);
+}
+
+cpSync(reqSrc, reqDst);
+
+// Log every non-blank, non-comment line so the Vercel build log shows exactly
+// which packages will be installed by the Python runtime.
+const reqLines = readFileSync(reqSrc, 'utf-8')
+  .split('\n')
+  .filter(l => l.trim() && !l.trim().startsWith('#'));
+console.log(
+  `[vercel-build] requirements.txt → ${reqDst}  (${reqLines.length} packages)\n` +
+  reqLines.map(l => `    ${l}`).join('\n'),
+);
 
 // ── 5. Patch router.py: fix _root for the function directory layout ───────────
 //
@@ -136,12 +154,17 @@ writeFileSync(
         // ── API ── all /api/... requests go to the Python function
         { src: '/api/(.*)', dest: '/api' },
 
-        // ── Static assets ── serve files verbatim before SPA fallbacks
+        // ── Portal SPA ── must come BEFORE filesystem and landing catch-all
+        // [^.]+ prevents intercepting .js/.css asset files (they have dots)
+        { src: '/portal$',          dest: '/portal/index.html' },
+        { src: '/portal/([^.]*)',   dest: '/portal/index.html' },
+
+        // ── Static assets ── serve files verbatim (JS, CSS, images)
         { handle: 'filesystem' },
 
-        // ── Portal SPA ── any unmatched /portal path serves the portal index
-        { src: '/portal$',     dest: '/portal/index.html' },
-        { src: '/portal/(.*)', dest: '/portal/index.html' },
+        // ── Auth / Login ── serve the landing SPA (handles its own routing)
+        { src: '/login',    dest: '/index.html' },
+        { src: '/signup',   dest: '/index.html' },
 
         // ── Landing SPA ── everything else serves the landing index
         { src: '/(.*)', dest: '/index.html' },

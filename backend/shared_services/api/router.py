@@ -11,9 +11,9 @@ from fastapi import APIRouter
 
 from api.admin import router as admin_router
 from api.chat import router as chat_router
-from api.concierge import router as concierge_router
 from api.health import router as health_router
 from api.market import router as market_router
+from api.stripe_service import router as stripe_router
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +21,9 @@ api_router = APIRouter()
 
 api_router.include_router(health_router)
 api_router.include_router(chat_router, prefix="/chat")
-api_router.include_router(concierge_router)
 api_router.include_router(admin_router, prefix="/admin")
 api_router.include_router(market_router, prefix="/market")
+api_router.include_router(stripe_router, prefix="/stripe")
 
 # ── Spoke routers ─────────────────────────────────────────────────────────────
 # Each spoke exposes a FastAPI router at  spokes/<slug>/api.py.

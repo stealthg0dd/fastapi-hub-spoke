@@ -17,3 +17,6 @@ redis==5.0.1
 python-dotenv==1.0.1
 httpx==0.26.0
 tenacity==8.2.3
+
+# Billing
+stripe==8.9.0

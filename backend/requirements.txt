@@ -35,3 +35,8 @@ rank-bm25>=0.2.2       # BM25-Okapi — KnowledgeScanner (optional, see knowledg
 python-dotenv==1.0.1
 httpx==0.26.0
 tenacity==8.2.3
+
+# Email (pydantic EmailStr + async SMTP delivery for waitlist notifications)
+pydantic[email]>=2.6.1
+email-validator>=2.1.0
+aiosmtplib>=5.1.0
