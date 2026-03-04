@@ -8,9 +8,12 @@ export const API_KEY    = 'neufin.FGUN8eq_O2erbcVVyCtdukMAtcGcwSdBErRK3TZ2FEI';
 export const USER_ID = '00000000-0000-0000-0000-000000000001';
 
 // ── Axios instance ────────────────────────────────────────────────────────────
-// Use || (not ??) so that an empty-string VITE_API_URL (e.g. unset in Vercel)
-// falls back to the localhost default rather than silently using "" as the URL.
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+// Use || so an empty-string VITE_API_URL triggers the fallback.
+// Production fallback is the Railway backend; local dev still hits localhost.
+const baseURL = import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD
+    ? 'https://fastapi-hub-spoke-production.up.railway.app/api/v1'
+    : 'http://localhost:8000/api/v1');
 
 export const api = axios.create({
   baseURL,

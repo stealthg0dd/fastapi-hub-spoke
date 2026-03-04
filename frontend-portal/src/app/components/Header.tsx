@@ -1,5 +1,6 @@
-import { Activity, Settings, Bell, User, BarChart3, Briefcase } from 'lucide-react';
+import { Settings, Bell, User, BarChart3, Briefcase, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router';
+import { signOut } from '../../utils/supabase';
 //import logoImage from 'figma:asset/1e05f334cab806cc0d5cb5a632565c93d01080cd.png';//
 const logoImage = "https://placehold.co/200x50?text=Neufin"
 
@@ -88,6 +89,13 @@ export function Header({ currentPrice, priceChange, ticker = 'AAPL' }: HeaderPro
           </button>
           <button className="p-1.5 hover:bg-white/5 rounded transition-colors" title="Profile">
             <User className="w-4 h-4 text-gray-500" />
+          </button>
+          <button
+            onClick={() => signOut()}
+            className="p-1.5 hover:bg-[#FF3B69]/10 rounded transition-colors"
+            title="Logout"
+          >
+            <LogOut className="w-4 h-4 text-gray-500 hover:text-[#FF3B69]" />
           </button>
         </div>
       </div>

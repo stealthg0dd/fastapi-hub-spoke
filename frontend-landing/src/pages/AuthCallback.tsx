@@ -76,17 +76,14 @@ export function AuthCallback() {
     };
 
     const checkPortfolioAndRedirect = async (_accessToken: string) => {
-      try {
-        // Redirect to the portal app after successful authentication.
-        // The portal runs on a separate Vite dev server (port 3001), so we
-        // must use a hard navigation — React Router cannot cross origins.
-        const portalUrl = import.meta.env.VITE_PORTAL_URL || `${window.location.origin}/portal/`;
-        console.log('Authentication successful, redirecting to portal:', portalUrl);
-        window.location.replace(portalUrl);
-      } catch (error) {
-        console.error('Error in redirect:', error);
-        window.location.replace(import.meta.env.VITE_PORTAL_URL || `${window.location.origin}/portal/`);
-      }
+      // PROD-aware portal URL: env var takes precedence, then explicit origin fallback.
+      // Never fall back to localhost in production.
+      const portalUrl = import.meta.env.VITE_PORTAL_URL ||
+        (import.meta.env.PROD
+          ? 'https://neufinfinalbuild1.vercel.app/portal/'
+          : 'http://localhost:3001/portal/');
+      console.log('Authentication successful, redirecting to portal:', portalUrl);
+      window.location.replace(portalUrl);
     };
 
     handleAuthCallback();

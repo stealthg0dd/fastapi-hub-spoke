@@ -20,3 +20,10 @@ tenacity==8.2.3
 
 # Billing
 stripe==8.9.0
+
+# LLM / AI graph
+anthropic>=0.34.0
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-anthropic>=0.2.0
+langgraph>=0.2.0

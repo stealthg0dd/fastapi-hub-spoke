@@ -22,16 +22,19 @@ export function Login() {
   const fromFreeTrial = location.state?.from === 'free-trial';
 
   useEffect(() => {
-    // Check if user is already logged in
+    // Check if user is already logged in — send straight to portal
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Redirect to customer pane if already logged in
-        navigate('/customer-pane');
+        const portalUrl = import.meta.env.VITE_PORTAL_URL ||
+          (import.meta.env.PROD
+            ? 'https://neufinfinalbuild1.vercel.app/portal/'
+            : 'http://localhost:3001/portal/');
+        window.location.replace(portalUrl);
       }
     };
     checkSession();
-  }, [navigate]);
+  }, []);
 
   const handleGoogleLogin = async () => {
     try {
