@@ -2,7 +2,6 @@ import { Header } from './Header';
 import { Outlet } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { WhatsAppWidget } from './WhatsAppWidget';
 import { useState } from 'react';
 import { Contrast, Lock, Shield, Eye, EyeOff } from 'lucide-react';
 const neufinLogo = '/assets/1e05f334cab806cc0d5cb5a632565c93d01080cd.png';
@@ -31,9 +30,6 @@ export function Layout() {
 
       <Header />
       <Outlet />
-      
-      {/* WhatsApp Widget */}
-      <WhatsAppWidget />
       
       {/* Enhanced Footer with Trust Elements */}
       <footer className="border-t border-border bg-card/30 backdrop-blur-sm mt-16" role="contentinfo">

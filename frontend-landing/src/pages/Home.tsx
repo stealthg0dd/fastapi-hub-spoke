@@ -1,4 +1,4 @@
-import { Brain, TrendingUp, Shield, Zap, ArrowRight, Star, Users, Target, BarChart3, Award, CheckCircle, Play, Activity, Gauge, AlertTriangle, MapPin, Mail, Globe, Building2, User, MessageCircle } from 'lucide-react';
+import { Brain, TrendingUp, Shield, Zap, ArrowRight, Star, Users, Target, BarChart3, Award, CheckCircle, Play, Activity, Gauge, AlertTriangle, MapPin, Mail, Globe, Building2, User } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -8,12 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge';
 import { LiveStockTicker } from '../components/LiveStockTicker';
 import { SEO } from '../components/SEO';
-import { EarlyAccessForm } from '../components/EarlyAccessForm';
 import { StrategicSections } from '../components/StrategicSections';
 import { KnowledgeHub } from '../components/KnowledgeHub';
 import { ExpandedFAQ } from '../components/ExpandedFAQ';
 import { TechnicalFooter } from '../components/TechnicalFooter';
-import { NeufinChatbot } from '../components/NeufinChatbot';
 const neufinLogo = '/assets/1e05f334cab806cc0d5cb5a632565c93d01080cd.png';
 const aiTraderImage = '/assets/56b1e8218e4eecf5ebadf5ff37335bf543223e96.png';
 const neufinDashboardImage = '/assets/ee3e0970c3bf4d58e7a445b175b3f23c4b8de039.png';
@@ -176,8 +174,6 @@ function LiveDemoWidget() {
 export function Home() {
   const navigate = useNavigate();
   const supabase = createClient();
-  const [showEarlyAccessForm, setShowEarlyAccessForm] = useState(false);
-
   useEffect(() => {
     // Check if user is authenticated and redirect to dashboard
     const checkAuthAndRedirect = async () => {
@@ -206,7 +202,7 @@ export function Home() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 sticky top-0 z-50"
+        className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 sticky top-0 z-[60]"
       >
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-center space-x-3 text-sm">
@@ -214,7 +210,7 @@ export function Home() {
               🎉 NEW
             </Badge>
             <span className="font-medium">Google OAuth Login & Portfolio Integration Now Live!</span>
-            <Link to="/auth-features">
+            <Link to="/about">
               <Button size="sm" variant="ghost" className="text-white hover:bg-white/20 ml-2">
                 Learn More <ArrowRight className="h-3 w-3 ml-1" />
               </Button>
@@ -316,21 +312,15 @@ export function Home() {
               </motion.div>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
+                <Button
+                  disabled
+                  size="lg"
+                  className="px-8 py-6 text-lg bg-gradient-to-r from-purple-600 to-blue-600 opacity-70 cursor-not-allowed touch-target"
+                  aria-label="Coming soon"
                 >
-                  <Button 
-                    onClick={() => setShowEarlyAccessForm(true)}
-                    size="lg" 
-                    className="px-8 py-6 text-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 touch-target"
-                    role="button"
-                    aria-label="Calculate your alpha score"
-                  >
-                    <Gauge className="mr-2 h-5 w-5" />
-                    Calculate My Alpha Score
-                  </Button>
-                </motion.div>
+                  <Gauge className="mr-2 h-5 w-5" />
+                  Coming Soon
+                </Button>
                 
                 <Button 
                   asChild
@@ -378,7 +368,7 @@ export function Home() {
       <LiveStockTicker />
 
       {/* Strategic Sections: Problem, Solution, Core Modules */}
-      <StrategicSections onOpenEarlyAccess={() => setShowEarlyAccessForm(true)} />
+      <StrategicSections />
 
       {/* Features Section with Enhanced Visuals */}
       <section className="py-20 relative">
@@ -690,7 +680,7 @@ export function Home() {
             className="text-center"
           >
             <div className="flex flex-wrap gap-4 justify-center">
-              <Link to="/auth-features">
+              <Link to="/about">
                 <Button className="cta-button px-8 py-6 text-lg">
                   <Shield className="h-5 w-5 mr-2" />
                   Explore Auth Features
@@ -850,33 +840,6 @@ export function Home() {
       <TechnicalFooter />
     </div>
     
-    {/* Early Access Form Modal */}
-    <EarlyAccessForm 
-      isOpen={showEarlyAccessForm} 
-      onClose={() => setShowEarlyAccessForm(false)} 
-    />
-
-    {/* Neufin AI Concierge Chatbot */}
-    <NeufinChatbot />
-
-    {/* Floating WhatsApp Button */}
-    <motion.a
-      href="https://wa.me/6597627734"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-50 bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-2xl transition-all duration-300 hover:scale-110 group"
-      initial={{ opacity: 0, scale: 0 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, delay: 1 }}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.95 }}
-      aria-label="Contact us on WhatsApp"
-    >
-      <MessageCircle className="h-6 w-6" />
-      <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-gray-900 text-white px-3 py-2 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-        Chat with us on WhatsApp
-      </span>
-    </motion.a>
     </>
   );
 }

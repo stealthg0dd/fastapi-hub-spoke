@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { createClient } from '../utils/supabase/client';
-import { EarlyAccessForm } from './EarlyAccessForm';
 const neufinLogo = '/assets/1e05f334cab806cc0d5cb5a632565c93d01080cd.png';
 
 const tickerSuggestions = [
@@ -17,7 +16,7 @@ const tickerSuggestions = [
   { symbol: 'MSFT', name: 'Microsoft Corp.', change: '+1.5%' },
 ];
 
-const PORTAL_URL = import.meta.env.VITE_PORTAL_URL || '/customer-portal';
+const PORTAL_URL = import.meta.env.VITE_PORTAL_URL || 'http://localhost:3001/portal/';
 
 const navigation = [
   { name: 'Home', href: '/', external: false },
@@ -32,7 +31,6 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [showEarlyAccessForm, setShowEarlyAccessForm] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const supabase = createClient();
@@ -243,14 +241,13 @@ export function Header() {
                     <Button asChild variant="ghost" size="sm">
                       <Link to="/login">Sign In</Link>
                     </Button>
-                    <Button 
-                      onClick={() => setShowEarlyAccessForm(true)}
-                      size="sm" 
-                      className="cta-button"
-                      role="button"
-                      aria-label="Join the waitlist for early bird discount"
+                    <Button
+                      disabled
+                      size="sm"
+                      className="cta-button opacity-60 cursor-not-allowed"
+                      aria-label="Coming soon"
                     >
-                      Join Waitlist
+                      Coming Soon
                     </Button>
                   </>
                 )}
@@ -368,14 +365,13 @@ export function Header() {
                         <Button asChild variant="ghost" size="sm">
                           <Link to="/login" onClick={() => setMobileMenuOpen(false)}>Sign In</Link>
                         </Button>
-                        <Button 
-                          onClick={() => setShowEarlyAccessForm(true)}
-                          size="sm" 
-                          className="cta-button"
-                          role="button"
-                          aria-label="Join the waitlist for early bird discount"
+                        <Button
+                          disabled
+                          size="sm"
+                          className="cta-button opacity-60 cursor-not-allowed"
+                          aria-label="Coming soon"
                         >
-                          Join Waitlist
+                          Coming Soon
                         </Button>
                       </>
                     )}
@@ -387,11 +383,6 @@ export function Header() {
         </AnimatePresence>
       </div>
       
-      {/* Early Access Form Modal */}
-      <EarlyAccessForm 
-        isOpen={showEarlyAccessForm} 
-        onClose={() => setShowEarlyAccessForm(false)} 
-      />
     </header>
   );
 }

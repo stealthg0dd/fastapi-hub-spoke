@@ -75,14 +75,17 @@ export function AuthCallback() {
       }
     };
 
-    const checkPortfolioAndRedirect = async (accessToken: string) => {
+    const checkPortfolioAndRedirect = async (_accessToken: string) => {
       try {
-        // Always redirect to customer pane after successful authentication
-        console.log('Authentication successful, redirecting to customer pane');
-        navigate('/customer-pane');
+        // Redirect to the portal app after successful authentication.
+        // The portal runs on a separate Vite dev server (port 3001), so we
+        // must use a hard navigation — React Router cannot cross origins.
+        const portalUrl = import.meta.env.VITE_PORTAL_URL || `${window.location.origin}/portal/`;
+        console.log('Authentication successful, redirecting to portal:', portalUrl);
+        window.location.replace(portalUrl);
       } catch (error) {
         console.error('Error in redirect:', error);
-        navigate('/customer-pane');
+        window.location.replace(import.meta.env.VITE_PORTAL_URL || `${window.location.origin}/portal/`);
       }
     };
 

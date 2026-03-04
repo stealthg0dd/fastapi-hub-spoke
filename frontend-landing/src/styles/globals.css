@@ -416,3 +416,14 @@
 html {
   font-size: var(--font-size);
 }
+
+/* ── Neufin floating panels — force solid opaque dark background ─────────────
+   Placed OUTSIDE @layer so this declaration wins over all layered Tailwind
+   rules. !important overrides any Tailwind bg-* or bg-card classes that might
+   leak in via the component tree or shadcn defaults.                           */
+.neufin-panel {
+  background: #0D1117 !important;
+  background-color: #0D1117 !important;
+  color-scheme: dark;
+  isolation: isolate;
+}

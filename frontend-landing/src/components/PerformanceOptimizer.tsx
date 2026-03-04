@@ -12,13 +12,10 @@ export function PerformanceOptimizer() {
   useEffect(() => {
     // Preload critical resources
     const preloadCriticalResources = () => {
-      // Preload fonts
-      const fontPreload = document.createElement('link');
-      fontPreload.rel = 'preload';
-      fontPreload.as = 'font';
-      fontPreload.type = 'font/woff2';
-      fontPreload.crossOrigin = 'anonymous';
-      document.head.appendChild(fontPreload);
+      // Font preload omitted — no specific woff2 URL is bundled.
+      // A <link rel="preload" as="font"> without an href causes browsers
+      // to try preloading the current page URL as a font, throwing
+      // "Invalid href" console errors.
 
       // Preconnect to critical origins
       const origins = [

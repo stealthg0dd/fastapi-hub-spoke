@@ -1,29 +1,19 @@
-import { useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
 
 /**
- * CustomerPortal — redirect gate.
+ * CustomerPortal — entry point for the "Customer Login" nav button.
  *
- * Dev:  VITE_PORTAL_URL=http://localhost:3001  → hard-navigates to the
- *       Vite dev server running frontend-portal.
- *
- * Prod: VITE_PORTAL_URL is empty → hard-navigates to /customer-portal on
- *       the same origin so Vercel routing serves frontend-portal/dist.
+ * If VITE_PORTAL_URL is set to a separate origin (e.g. http://localhost:3001),
+ * hard-navigate there.  Otherwise redirect to /login so the user can sign in
+ * with Google OAuth; AuthCallback will forward them to /customer-pane.
  */
-const PORTAL_URL = import.meta.env.VITE_PORTAL_URL || '/customer-portal';
+const PORTAL_URL = import.meta.env.VITE_PORTAL_URL as string | undefined;
 
 export function CustomerPortal() {
-  useEffect(() => {
+  if (PORTAL_URL) {
     window.location.replace(PORTAL_URL);
-  }, []);
+    return null;
+  }
 
-  return (
-    <div className="min-h-screen bg-background dark flex items-center justify-center">
-      <div className="text-center">
-        <Loader2 className="h-12 w-12 animate-spin text-purple-500 mx-auto mb-4" />
-        <h2 className="text-2xl mb-2">Loading Customer Portal…</h2>
-        <p className="text-muted-foreground">You will be redirected automatically.</p>
-      </div>
-    </div>
-  );
+  return <Navigate to="/login" replace />;
 }

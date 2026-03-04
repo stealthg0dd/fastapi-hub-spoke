@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -84,7 +84,12 @@ export function UserDashboard() {
   const [signalAttributions, setSignalAttributions] = useState<SignalAttribution[]>([]);
   const [sentimentData, setSentimentData] = useState<SentimentData[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
+  const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
+  const [isPaid, setIsPaid] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const supabase = createClient();
 
   useEffect(() => {
@@ -108,6 +113,15 @@ export function UserDashboard() {
         setIsLoading(false);
         return;
       }
+
+      // Store Supabase user ID for Stripe checkout
+      setUserId(session.user.id);
+
+      // Compute 7-day trial from account creation date
+      const createdAt = new Date(session.user.created_at);
+      const daysSince = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+      setTrialDaysLeft(Math.max(0, 7 - daysSince));
+      setIsPaid(localStorage.getItem('neufin_is_paid') === 'true');
 
       // Fetch user profile if logged in
       const response = await fetch(
@@ -382,6 +396,34 @@ export function UserDashboard() {
     navigate('/');
   };
 
+  // Mark subscription active when Stripe redirects back with ?session_id=
+  useEffect(() => {
+    if (searchParams.get('session_id')) {
+      localStorage.setItem('neufin_is_paid', 'true');
+      setIsPaid(true);
+      toast.success('Subscription activated! Welcome to Neufin Pro.', { duration: 5000 });
+    }
+  }, []);
+
+  const handleSubscribe = async () => {
+    const uid = userId || user?.id;
+    if (!uid) { navigate('/login'); return; }
+    setIsCheckingOut(true);
+    try {
+      const response = await fetch('/api/v1/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: uid }),
+      });
+      if (!response.ok) throw new Error('Checkout failed');
+      const { url } = await response.json();
+      window.location.href = url;
+    } catch {
+      toast.error('Could not start checkout. Please try again.');
+      setIsCheckingOut(false);
+    }
+  };
+
   const toggleDataSource = (sourceId: string) => {
     setDataSources(prev => 
       prev.map(source => 
@@ -511,6 +553,39 @@ export function UserDashboard() {
         </div>
       </div>
 
+      {/* Trial Countdown Banner */}
+      {trialDaysLeft !== null && !isPaid && (
+        <div
+          className="border-b"
+          style={{
+            borderColor: trialDaysLeft <= 0 ? 'rgba(239,68,68,0.2)' : 'rgba(234,179,8,0.2)',
+            backgroundColor: trialDaysLeft <= 0 ? 'rgba(239,68,68,0.07)' : 'rgba(234,179,8,0.07)',
+          }}
+        >
+          <div className="container mx-auto px-6 py-2 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-2 text-sm">
+              <Clock className="h-4 w-4 text-yellow-400 shrink-0" />
+              {trialDaysLeft > 0 ? (
+                <span className="text-yellow-300">
+                  Free Trial — <strong>{trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''} remaining</strong>
+                </span>
+              ) : (
+                <span className="text-red-400 font-semibold">Your free trial has expired</span>
+              )}
+            </div>
+            <Button
+              size="sm"
+              onClick={handleSubscribe}
+              disabled={isCheckingOut}
+              className="bg-purple-600 hover:bg-purple-700 text-white text-xs shrink-0"
+            >
+              <DollarSign className="h-3 w-3 mr-1" />
+              {isCheckingOut ? 'Loading…' : 'Subscribe — $49/mo'}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Global Overview Header */}
       <div className="border-b border-border bg-gradient-to-r from-purple-900/10 to-blue-900/10">
         <div className="container mx-auto px-6 py-6">
@@ -594,6 +669,7 @@ export function UserDashboard() {
       </div>
 
       {/* Main Content */}
+      <div className="relative">
       <div className="container mx-auto px-6 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
@@ -1149,6 +1225,63 @@ export function UserDashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Paywall overlay — covers Intelligence layer when trial expired */}
+      {trialDaysLeft !== null && trialDaysLeft <= 0 && !isPaid && (
+        <div
+          className="absolute inset-0 z-40 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(13,17,23,0.96)' }}
+        >
+          <div
+            className="text-center max-w-md mx-4 p-8 rounded-2xl shadow-2xl"
+            style={{
+              backgroundColor: '#0D1117',
+              border: '1px solid rgba(124,58,237,0.4)',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+            }}
+          >
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+              style={{ backgroundColor: 'rgba(239,68,68,0.15)' }}
+            >
+              <AlertTriangle className="h-8 w-8 text-red-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Your Free Trial has Ended</h2>
+            <p className="text-gray-400 mb-1 text-sm">
+              Subscribe to continue accessing Alpha Signals, Bias Correction, and live Intelligence data.
+            </p>
+            <p className="text-xs mb-6" style={{ color: '#4b5563' }}>No contracts. Cancel anytime.</p>
+
+            <div className="space-y-3 mb-6 text-left">
+              {[
+                'Unlimited Alpha Signals',
+                'Real-time Bias Correction',
+                'AI Signal Attribution',
+                '47-bias Detection Engine',
+              ].map((f) => (
+                <div key={f} className="flex items-center gap-2 text-sm text-gray-300">
+                  <CheckCircle className="h-4 w-4 text-green-400 shrink-0" />
+                  {f}
+                </div>
+              ))}
+            </div>
+
+            <Button
+              onClick={handleSubscribe}
+              disabled={isCheckingOut}
+              className="w-full h-12 text-white font-semibold text-base"
+              style={{ backgroundColor: '#7c3aed' }}
+            >
+              <DollarSign className="h-5 w-5 mr-2" />
+              {isCheckingOut ? 'Redirecting to Checkout…' : 'Subscribe Now — $49/mo'}
+            </Button>
+            <p className="text-xs mt-3" style={{ color: '#4b5563' }}>
+              Powered by Stripe — bank-grade security
+            </p>
+          </div>
+        </div>
+      )}
+      </div>{/* end relative wrapper */}
 
       {/* Footer */}
       <div className="border-t border-border bg-card/50 mt-12">

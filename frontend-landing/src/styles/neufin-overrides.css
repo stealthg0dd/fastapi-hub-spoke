@@ -1,0 +1,38 @@
+/*
+ * neufin-overrides.css
+ *
+ * Plain CSS — NO Tailwind directives. Imported LAST in main.tsx so these
+ * declarations win the cascade over every @layer rule in index.css.
+ *
+ * .neufin-panel  → solid opaque dark container for Chatbot and Waitlist Modal
+ */
+
+/* ── Solid panel background ─────────────────────────────────────────────────── */
+.neufin-panel {
+  background: #0D1117 !important;
+  background-color: #0D1117 !important;
+  opacity: 1 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color-scheme: dark;
+  isolation: isolate;
+}
+
+/* ── Form elements inside panel ─────────────────────────────────────────────── */
+.neufin-panel input,
+.neufin-panel textarea,
+.neufin-panel select {
+  background-color: #151A23 !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.neufin-panel label {
+  color: #E2E8F0 !important;
+}
+
+/* ── Text defaults inside panel ─────────────────────────────────────────────── */
+.neufin-panel p,
+.neufin-panel span:not([class*="text-"]) {
+  color: #E2E8F0;
+}

@@ -12,11 +12,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 
-interface StrategicSectionsProps {
-  onOpenEarlyAccess: () => void;
-}
-
-export function StrategicSections({ onOpenEarlyAccess }: StrategicSectionsProps) {
+export function StrategicSections() {
   return (
     <>
       {/* The Problem Section - Emotional Hook */}
@@ -258,9 +254,9 @@ export function StrategicSections({ onOpenEarlyAccess }: StrategicSectionsProps)
                   transition={{ duration: 0.6, delay: 1.8 }}
                   className="mt-8 text-center"
                 >
-                  <Button onClick={onOpenEarlyAccess} size="lg" className="cta-button px-8 py-4">
+                  <Button disabled size="lg" className="cta-button px-8 py-4 opacity-70 cursor-not-allowed">
                     <Gauge className="h-5 w-5 mr-2" />
-                    Analyze My Real Portfolio
+                    Coming Soon
                   </Button>
                 </motion.div>
               </CardContent>
