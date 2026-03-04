@@ -1,5 +1,7 @@
 from collections.abc import AsyncGenerator
 import logging
+import ssl
+import certifi
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -24,13 +26,27 @@ def _asyncpg_url(url: str) -> str:
         return "postgresql+asyncpg://" + url[len("postgresql://"):]
     return url
 
+def _make_ssl_context() -> ssl.SSLContext:
+    """SSL context backed by certifi — works in Nix containers where system CAs are absent."""
+    ctx = ssl.create_default_context(cafile=certifi.where())
+    return ctx
+
+# Log the DB host at startup to aid Railway debugging (password masked)
+_db_url = _asyncpg_url(settings.database_url)
+try:
+    from urllib.parse import urlparse
+    _parsed = urlparse(_db_url)
+    logger.info("DB target: %s@%s:%s/%s", _parsed.username, _parsed.hostname, _parsed.port, _parsed.path.lstrip("/"))
+except Exception:
+    pass
+
 # Engine configuration optimized for Supabase PgBouncer (Port 6543)
 engine = create_async_engine(
-    _asyncpg_url(settings.database_url),
+    _db_url,
     echo=settings.debug,
     poolclass=NullPool,
     connect_args={
-        "ssl": "require",
+        "ssl": _make_ssl_context(),
         "statement_cache_size": 0,  # Required for Transaction Mode
     },
 )

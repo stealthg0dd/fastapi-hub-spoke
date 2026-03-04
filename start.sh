@@ -16,7 +16,7 @@ export PYTHONPATH="/app/backend:$PYTHONPATH"
 CERTS=$(python -c "import certifi; print(certifi.where())")
 export SSL_CERT_FILE="$CERTS"
 export REQUESTS_CA_BUNDLE="$CERTS"
-export HTTXX_CA_BUNDLE="$CERTS"
+export HTTPX_CA_BUNDLE="$CERTS"
 
 echo "🔒 SSL verification secured via venv/certifi."
 
