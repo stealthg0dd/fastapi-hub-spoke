@@ -34,27 +34,37 @@ _SERVICE_ROOT = Path(__file__).resolve().parent.parent  # api/ -> shared_service
 
 def _find_spokes_dir() -> Path:
     """
-    Scans for the spokes directory in potential locations.
-    Railway typically mounts the repo at /app.
+    Probe candidate locations for the spokes directory, in priority order.
+
+    Priority rationale:
+      1. /app/spokes           — Railway (shared_services-root deploy): container is /app,
+                                 so spokes land at /app/spokes when the repo ships them there.
+      2. /app/backend/spokes   — Railway (repo-root deploy): full repo at /app,
+                                 spokes are under /app/backend/spokes.
+      3. _SERVICE_ROOT.parent  — Local dev: shared_services/../spokes = backend/spokes.
+                                 NOTE: when _SERVICE_ROOT=/app this resolves to /spokes (no
+                                 /app prefix) which is why it must come AFTER the explicit
+                                 /app paths above.
+      4. CWD-relative          — Last resort for unusual working-directory setups.
+
+    A candidate is accepted when the directory itself exists; the neufin
+    sub-directory check was removed so a freshly-created but currently-empty
+    spokes dir doesn't block the match.
     """
     candidates = [
-        _SERVICE_ROOT.parent / "spokes",              # Local Dev: backend/spokes/
-        Path("/app/spokes"),                          # Railway: Flattened root
-        Path("/app/backend/spokes"),                  # Railway: Full repo root
-        _SERVICE_ROOT.parent.parent.parent / "spokes" # Deep fallback
+        Path("/app") / "spokes",                      # Railway: shared_services-root deploy
+        Path("/app") / "backend" / "spokes",          # Railway: repo-root deploy
+        _SERVICE_ROOT.parent / "spokes",              # Local dev: backend/spokes/
+        Path(os.getcwd()) / "spokes",                 # CWD fallback
     ]
-    
-    for c in candidates:
-        # We verify by checking if the specific 'neufin' spoke directory exists
-        if c.is_dir() and (c / "neufin").exists():
-            return c.resolve()
-            
-    # Fallback to current working directory discovery
-    cwd_spokes = Path(os.getcwd()) / "spokes"
-    if cwd_spokes.is_dir():
-        return cwd_spokes.resolve()
 
-    return candidates[0].resolve()
+    for c in candidates:
+        if c.is_dir():
+            return c.resolve()
+
+    # Nothing found — return /app/spokes so the warning names the most-likely
+    # Railway path rather than the misleading /spokes (filesystem root).
+    return Path("/app/spokes")
 
 _SPOKES_DIR = _find_spokes_dir()
 logger.info("Router configuration: Spoke directory set to %s (Found=%s)", 
