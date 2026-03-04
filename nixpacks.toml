@@ -1,8 +1,13 @@
 [phases.setup]
+# We must include the pip package specifically for the python version
 nixPkgs = ["python311", "python311Packages.pip"]
 
 [phases.install]
-cmds = ["python3.11 -m pip install -r backend/shared_services/requirements.txt"]
+# We use 'pip3.11' or 'python3.11 -m pip' - now that it's installed
+cmds = [
+    "python3.11 -m pip install --upgrade pip",
+    "python3.11 -m pip install -r backend/shared_services/requirements.txt"
+]
 
 [phases.build]
 cmds = ["chmod +x /app/start.sh"]
