@@ -3,8 +3,7 @@ nixPkgs = ["python311", "python311Packages.pip"]
 
 [phases.install]
 cmds = [
-    "pip install --upgrade pip",
-    "pip install -r backend/shared_services/requirements.txt"
+    "pip install --break-system-packages --prefix=/app/.local -r backend/shared_services/requirements.txt"
 ]
 
 [phases.build]

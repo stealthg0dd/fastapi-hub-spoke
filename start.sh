@@ -1,12 +1,5 @@
 #!/bin/bash
 # Railway / Nixpacks startup script for the FastAPI backend.
-#
-# Why this exists:
-#   Railway's custom Start Command field overrides nixpacks.toml [start].
-#   The nixpacks python311 nix package installs 'python3.11' but the generic
-#   'python3' alias may not exist in the container PATH.  This script finds
-#   whichever interpreter is available and uses the correct working directory
-#   so that 'main:app' resolves to backend/shared_services/main.py.
 
 set -e
 
@@ -26,13 +19,18 @@ fi
 
 echo "Using interpreter: $(command -v $PYTHON) ($($PYTHON --version))"
 
-# ── 2. Move into the service directory ──────────────────────────────────────
-# This makes 'main:app' resolvable and puts shared_services/ on sys.path
-# automatically (Python adds CWD when running -m).
-SERVICE_DIR="$(dirname "$0")/backend/shared_services"
+# ── 2. Configure Environment Paths ──────────────────────────────────────────
+# Point Python to the custom installation directory used in nixpacks.toml
+# and ensure the backend root is available for cross-module imports.
+export PYTHONPATH=$PYTHONPATH:/app/.local/lib/python3.11/site-packages:/app/backend
+
+# ── 3. Move into the service directory ──────────────────────────────────────
+# This makes 'main:app' resolvable.
+SERVICE_DIR="/app/backend/shared_services"
 cd "$SERVICE_DIR"
 
 echo "Working directory: $(pwd)"
 
-# ── 3. Start uvicorn ────────────────────────────────────────────────────────
+# ── 4. Start uvicorn ────────────────────────────────────────────────────────
+# We use $PYTHON -m uvicorn to ensure it uses the specific interpreter we found
 exec "$PYTHON" -m uvicorn main:app --host 0.0.0.0 --port "${PORT:-8000}"
