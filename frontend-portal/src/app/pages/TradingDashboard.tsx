@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { TradingChart } from '../components/TradingChart';
-import { BiasTerminal } from '../components/BiasTerminal';
 import { ExecutionDock } from '../components/ExecutionDock';
 import { TradeEntry } from '../components/TradeEntry';
 import { Header } from '../components/Header';
@@ -13,9 +12,12 @@ import { EmotionalBreaker } from '../components/EmotionalBreaker';
 import { Watchlist } from '../components/Watchlist';
 import { TrialExpiredOverlay } from '../components/TrialExpiredOverlay';
 import { mockTrades } from '../utils/mockData';
-import { api, USER_ID, type DashboardSummary } from '../../utils/api';
+import apiClient from '../../api/apiClient';
+import type { DashboardSummaryResponse } from '../../api/types';
+import { useVenture } from '../../context/venturecontext';
 import { useSubscriptionContext } from '../hooks/useSubscription';
 import type { BiasAlert, CoachNote, Trade } from '../types/trading';
+import { AdvisorChat } from '../../components/AdvisorChat';
 
 interface SelectedStock {
   ticker: string;
@@ -70,6 +72,7 @@ function maxRiskScore(summary: DashboardSummary): number {
 
 export function TradingDashboard() {
   const subscription = useSubscriptionContext();
+  const { userId, ventureId } = useVenture();
 
   const [riskScore, setRiskScore] = useState(5.0);
   const [biasAlerts, setBiasAlerts] = useState<BiasAlert[]>([]);
@@ -89,15 +92,16 @@ export function TradingDashboard() {
 
   // ── Fetch dashboard summary on mount ────────────────────────────────────────
   const fetchDashboard = useCallback(async () => {
+    if (!ventureId) return;
     try {
-      const { data } = await api.get<DashboardSummary>('/spokes/neufin/dashboard-summary');
+      const { data } = await apiClient.get<DashboardSummaryResponse>('/api/v1/neufin/dashboard-summary');
       setBiasAlerts(mapBiasAlerts(data));
       setCoachNotes(mapCoachNotes(data));
       setRiskScore(maxRiskScore(data));
     } catch {
       // Keep defaults if backend is unavailable
     }
-  }, []);
+  }, [ventureId]);
 
   useEffect(() => { fetchDashboard(); }, [fetchDashboard]);
 
@@ -110,7 +114,7 @@ export function TradingDashboard() {
   };
 
   const handleConfirmTrade = async (thesis: string, sentiment: number) => {
-    if (!pendingTrade || isFrozen) return;
+    if (!pendingTrade || isFrozen || !userId) return;
 
     const executedPrice = selectedStock.price + (Math.random() - 0.5) * 2;
     const quantity = Math.floor(Math.random() * 100) + 10;
@@ -138,7 +142,7 @@ export function TradingDashboard() {
     // Submit to backend; refresh dashboard after profiler runs (~2s)
     try {
       await api.post('/spokes/neufin/trades', {
-        user_id: USER_ID,
+        user_id: userId,
         asset: newTrade.asset,
         traded_at: now,
         price: executedPrice,
@@ -240,7 +244,7 @@ export function TradingDashboard() {
         </div>
 
         {/* Right Sidebar */}
-        <div className="w-72 shrink-0 flex flex-col gap-3 p-4 pl-0 overflow-y-auto">
+        <div className="w-80 shrink-0 flex flex-col gap-3 p-4 pl-0 overflow-y-auto">
           {/* Watchlist */}
           <div className="h-56 shrink-0">
             <Watchlist onSelectTicker={handleSelectTicker} />
@@ -256,13 +260,9 @@ export function TradingDashboard() {
             />
           </div>
 
-          {/* Bias Terminal — wired to backend behavioral engine */}
-          <div className="flex-1 min-h-[300px]">
-            <BiasTerminal
-              riskScore={riskScore}
-              alerts={biasAlerts}
-              coachNotes={coachNotes}
-            />
+          {/* AI Advisor Chat */}
+          <div className="flex-1 min-h-[320px]">
+            <AdvisorChat />
           </div>
         </div>
       </div>

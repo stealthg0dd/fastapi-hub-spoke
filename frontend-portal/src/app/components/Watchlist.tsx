@@ -104,11 +104,20 @@ export function Watchlist({ onSelectTicker }: WatchlistProps) {
             exit={{ opacity: 0 }}
             className="group"
           >
-            <button
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => onSelectTicker(stock.ticker)}
-              className="w-full bg-[#0B0E11] border border-[#1A1D23] rounded p-2.5 hover:bg-white/5 transition-colors relative"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSelectTicker(stock.ticker);
+                }
+              }}
+              className="w-full bg-[#0B0E11] border border-[#1A1D23] rounded p-2.5 hover:bg-white/5 transition-colors relative cursor-pointer"
             >
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleRemoveTicker(stock.ticker);
@@ -141,7 +150,7 @@ export function Watchlist({ onSelectTicker }: WatchlistProps) {
                   </span>
                 </div>
               </div>
-            </button>
+            </div>
           </motion.div>
         ))}
       </div>

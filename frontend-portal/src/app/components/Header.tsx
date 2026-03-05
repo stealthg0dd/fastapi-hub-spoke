@@ -1,6 +1,7 @@
 import { Settings, Bell, User, BarChart3, Briefcase, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { signOut } from '../../utils/supabase';
+import { useVenture } from '../../context/venturecontext';
 //import logoImage from 'figma:asset/1e05f334cab806cc0d5cb5a632565c93d01080cd.png';//
 const logoImage = "https://placehold.co/200x50?text=Neufin"
 
@@ -19,6 +20,7 @@ export function Header({ currentPrice, priceChange, ticker = 'AAPL' }: HeaderPro
   const navigate = useNavigate();
   const isPositive = priceChange >= 0;
   const trialIsEnding = daysRemaining <= 2; // Red when 2 days or less
+  const { ventureId, setVentureId } = useVenture();
 
   return (
     <div className="h-14 bg-[#0D1117] border-b border-[#1A1D23] flex items-center px-6 shrink-0">
@@ -42,6 +44,28 @@ export function Header({ currentPrice, priceChange, ticker = 'AAPL' }: HeaderPro
           <span className={`text-xs font-mono ${trialIsEnding ? 'text-[#FF3B69]' : 'text-[#F59E0B]'}`}>
             Trial: {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left
           </span>
+        </div>
+
+        {/* Venture Switcher */}
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">
+            Venture
+          </span>
+          <select
+            value={ventureId ?? ''}
+            onChange={(e) => setVentureId(e.target.value || null)}
+            className="rounded-md border border-[#1A1D23] bg-[#020617] px-2 py-1 text-xs font-mono text-gray-200 focus:outline-none focus:border-[#00C087]"
+          >
+            <option value="" className="bg-[#020617] text-gray-400">
+              Select…
+            </option>
+            <option value="venture-alpha" className="bg-[#020617] text-gray-200">
+              venture-alpha
+            </option>
+            <option value="venture-beta" className="bg-[#020617] text-gray-200">
+              venture-beta
+            </option>
+          </select>
         </div>
 
         {/* Current Market Data */}

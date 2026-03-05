@@ -6,7 +6,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePlaidLink } from 'react-plaid-link';
-import { api, USER_ID, type PortfolioHolding } from '../../utils/api';
+import { api, type PortfolioHolding } from '../../utils/api';
+import { useVenture } from '../../context/venturecontext';
+import { UploadPortfolio } from '../../components/UploadPortfolio';
 
 interface Holding {
   ticker: string;
@@ -32,6 +34,7 @@ function mapHolding(h: PortfolioHolding): Holding {
 
 export function Portfolio() {
   const navigate = useNavigate();
+  const { userId } = useVenture();
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<ConnectMethod>(null);
   const [connected, setConnected] = useState(false);
@@ -43,9 +46,10 @@ export function Portfolio() {
 
   // ── Fetch holdings ─────────────────────────────────────────────────────────
   const fetchHoldings = useCallback(async () => {
+    if (!userId) return;
     try {
       const { data } = await api.get<PortfolioHolding[]>(
-        `/spokes/neufin/portfolio/holdings?user_id=${USER_ID}`
+        `/spokes/neufin/portfolio/holdings?user_id=${userId}`
       );
       setHoldings(data.map(mapHolding));
       if (data.length > 0) {
@@ -55,17 +59,17 @@ export function Portfolio() {
     } catch {
       setHoldings([]);
     }
-  }, []);
+  }, [userId]);
 
   useEffect(() => { fetchHoldings(); }, [fetchHoldings]);
 
   // ── Plaid Link token ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (selectedMethod !== 'plaid') return;
+    if (selectedMethod !== 'plaid' || !userId) return;
     api
       .post<{ link_token: string; expiration: string }>(
         '/spokes/neufin/plaid/create-link-token',
-        { user_id: USER_ID }
+        { user_id: userId }
       )
       .then(({ data }) => setLinkToken(data.link_token))
       .catch(() => setLinkToken(null));
@@ -76,7 +80,7 @@ export function Portfolio() {
     onSuccess: async (publicToken) => {
       try {
         await api.post('/spokes/neufin/plaid/exchange-token', {
-          user_id: USER_ID,
+          user_id: userId,
           public_token: publicToken,
         });
         setConnected(true);
@@ -93,10 +97,11 @@ export function Portfolio() {
 
   // ── CSV upload ──────────────────────────────────────────────────────────────
   const handleCsvChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!userId) return;
     const file = e.target.files?.[0];
     if (!file) return;
     const formData = new FormData();
-    formData.append('user_id', USER_ID);
+    formData.append('user_id', userId);
     formData.append('file', file);
     try {
       await api.post('/spokes/neufin/portfolio/upload', formData, {
@@ -392,21 +397,25 @@ export function Portfolio() {
                 })}
               </div>
 
-              {selectedMethod && (
+              {selectedMethod === 'plaid' && (
                 <motion.button
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}
                   onClick={handleContinue}
-                  disabled={selectedMethod === 'plaid' && !plaidReady}
+                  disabled={!plaidReady}
                   className="w-full mt-4 py-3 rounded-xl font-mono text-sm text-white transition-colors disabled:opacity-50"
                   style={{
                     backgroundColor: connectOptions.find(o => o.id === selectedMethod)?.color,
                   }}
                 >
-                  {selectedMethod === 'plaid' && !plaidReady
-                    ? 'Loading…'
-                    : `Continue with ${connectOptions.find(o => o.id === selectedMethod)?.title}`}
+                  {plaidReady ? 'Continue with Plaid' : 'Loading…'}
                 </motion.button>
+              )}
+
+              {selectedMethod === 'csv' && (
+                <div className="mt-4">
+                  <UploadPortfolio />
+                </div>
               )}
             </motion.div>
           </motion.div>

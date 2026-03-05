@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { api, USER_ID } from '../../utils/api';
+import { api } from '../../utils/api';
+import { useVenture } from '../../context/venturecontext';
 
 export interface SubscriptionState {
   status: 'loading' | 'trial_active' | 'checkout_required' | 'already_subscribed';
@@ -38,16 +39,21 @@ const STRIPE_BILLING_URL = 'https://billing.stripe.com/p/login/test_eVq3cvbpM9p5
 
 export function useSubscription(): SubscriptionState {
   const [state, setState] = useState<SubscriptionState>(defaultState);
+  const { userId } = useVenture();
 
   useEffect(() => {
     let cancelled = false;
 
     async function fetchStatus() {
       try {
+        if (!userId) {
+          return;
+        }
+
         // Step 1: fast read-only status check — no Stripe session created
         const { data } = await api.get<TrialStatusResponse>(
           '/spokes/neufin/trial-status',
-          { params: { user_id: USER_ID } },
+          { params: { user_id: userId } },
         );
 
         if (cancelled) return;
@@ -77,7 +83,7 @@ export function useSubscription(): SubscriptionState {
           const { data: checkoutData } = await api.post<CheckoutResponse>(
             '/spokes/neufin/billing/create-checkout-session',
             {
-              user_id: USER_ID,
+              user_id: userId,
               success_url: `${window.location.origin}/billing/success`,
               cancel_url: `${window.location.origin}/billing/cancel`,
             },

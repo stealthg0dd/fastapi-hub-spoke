@@ -3,6 +3,7 @@ import { router } from './routes';
 import { SubscriptionContext, useSubscription } from './hooks/useSubscription';
 import { TrialExpiredOverlay } from './components/TrialExpiredOverlay';
 import { Toaster } from './components/ui/sonner';
+import { VentureProvider } from '../context/venturecontext';
 
 function AppWithSubscription() {
   const subscription = useSubscription();
@@ -28,5 +29,9 @@ function AppWithSubscription() {
 }
 
 export default function App() {
-  return <AppWithSubscription />;
+  return (
+    <VentureProvider>
+      <AppWithSubscription />
+    </VentureProvider>
+  );
 }
